@@ -55,6 +55,10 @@
 	};
 </script>
 
+<svelte:head>
+	<title>{active?.name ?? 'Latex'}</title>
+</svelte:head>
+
 <div class="w-full h-full flex">
 	{#if active}
 		<div class="w-1/3 bg-gray-50 border-r-gray-200 border-r-2 flex flex-col print:hidden">
