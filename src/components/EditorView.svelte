@@ -1,19 +1,12 @@
 <script lang="ts">
 	import katex from 'katex';
 	import { marked } from 'marked';
-	import { onMount } from 'svelte';
 	import SvelteMarkdown from 'svelte-markdown';
 	import Monaco from '../components/Monaco.svelte';
+	import { documents } from '../stores/documents';
+	import { id } from '../stores/id';
 	import LatexCode from './LatexCode.svelte';
 	import LatexInline from './LatexInline.svelte';
-
-	let local: Storage | null = null;
-	export let key: string;
-
-	onMount(() => {
-		local = localStorage;
-		value = local?.getItem(`${key}_value`) ?? '';
-	});
 
 	const renderer = new marked.Renderer();
 	const codeToHtml = renderer.code.bind(renderer);
@@ -23,26 +16,16 @@
 		}
 		return codeToHtml(code, language, isEscaped);
 	};
-	let value = '';
-	let oldKey = key;
-	$: if (key !== oldKey) {
-		oldKey = key;
-		value = local?.getItem(`${key}_value`) ?? '';
-	}
 
-	$: source = marked.lexer(value, {
+	$: source = marked.lexer($documents[$id].content, {
 		renderer,
 		smartLists: true,
 		gfm: true
 	});
-
-	$: if (value) {
-		local?.setItem(`${key}_value`, value);
-	}
 </script>
 
 <div class="flex w-full h-full">
-	<Monaco class="w-full border-r-gray-100 border-r-2 print:hidden" bind:value {key} />
+	<Monaco class="w-full border-r-gray-100 border-r-2 print:hidden" />
 	<div class="w-full p-5 overflow-y-scroll print:absolute print:overflow-hidden">
 		<article class="prose">
 			<SvelteMarkdown {source} renderers={{ code: LatexCode, codespan: LatexInline }} />

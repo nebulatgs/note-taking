@@ -1,57 +1,40 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-
 	import EditorView from '../components/EditorView.svelte';
-	import type { LatexDocument } from '../interfaces/LatexDocument';
+	import { documents } from '../stores/documents';
+	import { id } from '../stores/id';
 
-	let local: Storage | null = null;
-	let documents: LatexDocument[] = [];
+	$: active = $documents[$id];
 
-	let id = -1;
-	$: active = documents[id];
-
-	onMount(() => {
-		local = localStorage;
-		documents = JSON.parse(local?.getItem(`documents`) ?? '[]');
-		if (!documents.length) {
-			documents.push({
-				key: 'unnamed',
-				name: 'Unnamed Document'
-			});
-		}
-		id = parseInt(local?.getItem(`id`) ?? '0');
+	$: documents.update((docs) => {
+		docs[$id] = active;
+		return docs;
 	});
 
-	$: if (documents.length) {
-		local?.setItem(`documents`, JSON.stringify(documents));
-	}
-
-	$: if (id !== -1) {
-		local?.setItem(`id`, id.toString());
-	}
-
 	const newDocument = () => {
-		id =
-			documents.push({
-				key: crypto.randomUUID(),
-				name: 'Unnamed Document'
-			}) - 1;
-		documents = documents;
+		documents.update(
+			(docs) => (
+				docs.push({
+					key: crypto.randomUUID(),
+					name: 'Unnamed Document',
+					content: ''
+				}),
+				docs
+			)
+		);
+		id.set($documents.length - 1);
 	};
-
 	const activateDocument = (index: number) => {
-		return () => (id = index);
+		return () => id.set(index);
 	};
 
 	const deleteDocument = () => {
-		documents.splice(id, 1);
-		if (!documents.length) {
+		documents.update((docs) => (docs.splice($id, 1), docs));
+		if (!$documents.length) {
 			newDocument();
 		}
-		if (id >= documents.length) {
-			id = documents.length - 1;
+		if ($id >= $documents.length) {
+			id.set($documents.length - 1);
 		}
-		documents = documents;
 	};
 </script>
 
@@ -76,7 +59,7 @@
 			</div>
 			<div class="flex justify-between gap-8 p-3">
 				<ul class="text-gray-700 flex-1 font-inter font-medium text-sm">
-					{#each documents as doc, i}
+					{#each $documents as doc, i}
 						<li on:click={activateDocument(i)}>
 							<div
 								class="{doc.key === active.key
@@ -104,6 +87,6 @@
 				/>
 			</div> -->
 		</div>
-		<EditorView bind:key={active.key} />
+		<EditorView />
 	{/if}
 </div>
